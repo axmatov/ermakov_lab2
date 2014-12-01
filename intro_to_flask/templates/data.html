@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+  
+{% block content %}
+  <h2>The big data page</h2>
+  <p>Here you can see all the data I've stolen from you... muahahahaaa</p>
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+{% endblock %}

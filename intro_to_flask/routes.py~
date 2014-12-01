@@ -1,0 +1,159 @@
+import requests
+import json
+from intro_to_flask import app
+from flask import render_template, request, flash, redirect, session, url_for
+from forms import ContactForm, SignupForm, SigninForm
+from flask.ext.mail import Message, Mail
+from models import db, User
+
+mail = Mail()
+
+app.config["MAIL_SERVER"]= "smtp.gmail.com"
+app.config["MAIL_PORT"]=465
+app.config["MAIL_USE_SSL"]=True
+app.config["MAIL_USERNAME"]='clara.zetkinova@gmail.com'
+app.config["MAIL_PASSWORD"]='youStinkkk'
+
+mail.init_app(app)
+
+ 
+app.secret_key = 'blablabla'
+auth = 0
+access_token = None;
+my_id ='9qan5tt0a0hh2fa52209tpc8la'
+bulgur_client_id = 'Q7PvBYmpltO1tcW2x7p8ARH187jc9pIQ7ZN2MH1o'
+bulgur_client_secret = 'NifEP7zIOM4s9nEvfRZal8Sq2nHfEsWFKKz7meu6ximezNMJaP'
+
+
+@app.route('/', methods = ['GET', 'POST'])
+def home():
+  global access_token
+  global auth
+  if auth == 77 and access_token == None: #obviously what should be tested is if the access token is still valid..but thats for another time
+  	   xx = request.args.get('code')
+           #r = requests.post("https://secure.meetup.com/oauth2/access?client_id=9qan5tt0a0hh2fa52209tpc8la&client_secret=egllavke7je7ecfmdfkhnraaj0&grant_type=authorization_code&redirect_uri=http://localhost:5000&code="+str(xx))
+           r = requests.post("http://127.0.0.1:5000/oauth/token?client_id="+bulgur_client_id+"&client_secret="+bulgur_client_secret+"&grant_type=authorization_code&redirect_uri=http://localhost:5001&code="+str(xx))
+	   rr = r.json()
+	   access_token = rr['access_token']
+	   auth = 0;
+	   return redirect('/data')
+  return render_template('home.html')
+ 
+@app.route('/data')
+def data():
+  global access_tocken
+  request_url_base  = 'https://api.meetup.com/' 
+  ny_tech_url = request_url_base + '2/events?&group_urlname=ny-tech&sign=true'
+  header1 = "Authorization" 
+  header2 = "bearer " + access_token
+  data_test = requests.get(ny_tech_url, headers = {header1 : header2})	
+  data_test = data_test.json()
+  flash(str(data_test))
+  member_url = request_url_base + '2/member/?key='+ my_id  +'&member_id=self'
+  data_test = requests.get('https://api.meetup.com/2/member/self?&sign=true&photo-host=public&page=20i', headers = {header1 : header2})	
+  data_test = data_test.json()
+  flash(str(data_test))
+  return render_template('data.html')  
+
+@app.route('/auth')
+def auth():
+  global auth
+  auth = 77;
+#  return redirect("https://secure.meetup.com/oauth2/authorize?client_id=9qan5tt0a0hh2fa52209tpc8la&response_type=code&redirect_uri=http://localhost:5000", code=302)
+  return redirect("http://127.0.0.1:5000/oauth/token/authorize?client_id="+bulgur_client_id+"&response_type=code&redirect_uri=http://localhost:5001", code=302)
+
+@app.route('/about')
+def about():
+  return render_template('about.html')
+
+@app.route('/test')
+def test():
+  if db.session.query('1').from_statement('SELECT 1').all():	
+	return 'yupi ye )))'
+  else:
+	return 'so en kakakaka'
+
+@app.route('/contact', methods= ['GET', 'POST'])
+def contact():
+   form = ContactForm(request.form)
+
+   if request.method == 'POST':
+	if form.validate() == False:
+	   	flash('All fields are required.')
+	   	return render_template('contact.html', form=form)
+	else:
+		msg = Message(form.subject.data, sender = 'clara.zetkinova@gmail.com', recipients=['clara.vuillemin@yahoo.de'])
+		msg.body = """
+		From :%s <%s>
+		%s
+		""" % (form.name.data, form.email.data, form.message.data)
+		mail.send(msg)
+
+	   	return 'Form posted.'
+
+   elif request.method == 'GET':
+	return render_template('contact.html', form = form)
+
+
+#sign in up out..
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+  form = SignupForm(request.form)
+  if 'email' in session:
+	return redirect(url_for('profile'))
+
+  if request.method == 'POST':
+	if form.validate() == False:
+	  return render_template('signup.html', form=form)
+	else:
+	  newuser = User(form.firstname.data, form.lastname.data, form.email.data, form.password.data)
+          db.session.add(newuser)
+          db.session.commit()       
+	  
+	  session['email'] = newuser.email
+
+          return redirect(url_for('profile')) 
+
+  elif request.method == 'GET':
+	return render_template('signup.html', form=form)
+
+@app.route('/profile')
+def profile():
+  if 'email' not in session:
+	return redirect(url_for('signin'))
+
+  user = User.query.filter_by(email=session['email']).first()
+  if user is None:
+	return redirect(url_for('signin'))
+  else:
+	return render_template('profile.html')
+
+
+@app.route('/signin', methods=['GET', 'POST'])
+def signin():
+  form = SigninForm(request.form)
+  if 'email' in session:
+	return redirect(url_for('profile'))
+
+  if request.method == 'POST':
+	if form.validate() == False:
+	  return render_template('signin.html', form = form)
+	else:
+	  session['email'] = form.email.data
+	  return redirect(url_for('profile'))
+  elif request.method == 'GET':
+	return render_template('signin.html', form=form)
+
+@app.route('/signout')
+def signout():
+  if 'email' not in session:
+	return redirect(url_for('signin'))
+  session.pop('email', None)
+  return redirect(url_for('home'))
+
+if __name__ == '__main__':
+  app.run(debug=True)
+
+
+

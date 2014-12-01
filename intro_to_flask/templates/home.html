@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="jumbo">
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+    <h2>Welcome to The Greatest Homepage Ever<h2>
+    <h3>Personal site of Clara The Data Hungry Monster - We love your personal data<h3>
+  </div>
+{% endblock %}
