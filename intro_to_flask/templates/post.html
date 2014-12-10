@@ -1,0 +1,28 @@
+{% extends "layout.html" %} 
+ 
+{% block content %}
+  <div class="jumbo">
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+
+  <h2>The Forum</h2>
+   
+  <form action="{{ url_for('forum') }}" method=post>
+    
+    {% if 'email' in session %}
+    <h3>You are logged in as {{ session['email'] }}</h3>
+    {{ form.text.label }}
+    {{ form.text }}
+
+    {{ form.submit }}
+
+    {% else %}
+    <h3>You need to log in post in the forum!!!</h3>
+
+    {% endif %}
+
+  </form>
+     
+{% endblock %}
+

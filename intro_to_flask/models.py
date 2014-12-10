@@ -25,6 +25,19 @@ class User(db.Model):
   def check_password(self, password):
     return check_password_hash(self.pwdhash, password)
 
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey('users.uid'))
+    user = db.relationship('User')
+    text = db.Column(db.Text)
+    tiemstamp = db.Column(db.DateTime)
+
+    def __init__(self, user_id, text, timestamp):
+	self.user_id = user_id
+	self.text = text
+	self.tiemstamp = timestamp
+
 class Client(db.Model):
     __tablename__ = 'clients'
     client_id = db.Column(db.String(40), primary_key=True)
@@ -76,24 +89,16 @@ class Grant(db.Model):
 
     code = db.Column(db.String(255), index=True, nullable=False)
 
-    redirect_uri = db.Column(db.String(255))
     expires = db.Column(db.DateTime)
-
-    _scopes = db.Column(db.Text)
 
     def delete(self):
         db.session.delete(self)
         db.session.commit()
         return self
 
-    @property
-    def scopes(self):
-        if self._scopes:
-            return self._scopes.split()
-        return []
-
 
 class Token(db.Model):
+    __tablename__='tokens'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(
         db.String(40), db.ForeignKey('clients.client_id'),

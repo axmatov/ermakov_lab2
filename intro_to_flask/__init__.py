@@ -9,6 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:R1kuchen@localhost/develop
 
 from models import db
 db.init_app(app)
+with app.app_context():
+   db.create_all()
 
 import intro_to_flask.routes
 

@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+ 
+{% block content %}
+  <div class="jumbo">
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+
+  <h2>Allow data access</h2>
+  <h3>If you want to give access to your data, proceed. 
+
+  If not it doesn't matter, we technically don need your consent to share your data  
+  </h3>
+   
+  <form action="{{ url_for('oauth_view') }}" method=post>
+    
+    {% if 'email' in session %}
+    <h4>You are logged in as {{ session['email'] }}
+    {% else %}
+
+    {{ form.email.label }}
+    {{ form.email }}
+
+    {{ form.password.label }}
+    {{ form.password }}
+
+    {% endif %}
+
+    {{ form.submit }}
+  </form>
+     
+{% endblock %}
+
